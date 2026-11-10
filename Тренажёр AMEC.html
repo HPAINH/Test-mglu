@@ -1,0 +1,557 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Тренажёр AMEC</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: dark AMEC-style top band, single centered column; seven stage colours from the framework encode which stage a question tests */
+:root{
+  --bg:#EEF0F3; --surface:#FFFFFF; --ink:#16191F; --muted:#5B6270; --line:#D8DCE3;
+  --band:#2A2B2E; --band-ink:#F4F4F5; --accent:#F0531C; --accent-ink:#FFFFFF;
+  --good:#0F7A55; --good-bg:#E3F4EC; --bad:#BF2A38; --bad-bg:#FBE7E9; --hint-bg:#FFF4DC; --hint-line:#E7B652;
+  --c-obj:#D3004A; --c-inp:#E5860F; --c-act:#00A57C; --c-peso:#2F8F6E; --c-out:#1C86D6; --c-otk:#0B6AA8; --c-ocm:#0A5690; --c-imp:#8A0AB0; --c-fn:#4A5160; --c-abbr:#6B5B3E; --c-struct:#3C4A63;
+  --f-display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111317; --surface:#1A1D23; --ink:#ECEEF2; --muted:#9BA2AF; --line:#2D323B;
+  --band:#08090B; --band-ink:#F4F4F5; --accent:#FF6A33; --accent-ink:#16191F;
+  --good:#45CF97; --good-bg:#11291F; --bad:#FF7480; --bad-bg:#33161B; --hint-bg:#2C2414; --hint-line:#9C7A2C;
+  --c-obj:#F0336F; --c-inp:#F49B2C; --c-act:#1DC497; --c-peso:#46B08A; --c-out:#3EA2EE; --c-otk:#3392D3; --c-ocm:#4B8FD0; --c-imp:#B44BDA; --c-fn:#8C95A6; --c-abbr:#B39C73; --c-struct:#8193B5;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111317; --surface:#1A1D23; --ink:#ECEEF2; --muted:#9BA2AF; --line:#2D323B;
+  --band:#08090B; --band-ink:#F4F4F5; --accent:#FF6A33; --accent-ink:#16191F;
+  --good:#45CF97; --good-bg:#11291F; --bad:#FF7480; --bad-bg:#33161B; --hint-bg:#2C2414; --hint-line:#9C7A2C;
+  --c-obj:#F0336F; --c-inp:#F49B2C; --c-act:#1DC497; --c-peso:#46B08A; --c-out:#3EA2EE; --c-otk:#3392D3; --c-ocm:#4B8FD0; --c-imp:#B44BDA; --c-fn:#8C95A6; --c-abbr:#B39C73; --c-struct:#8193B5;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--band)}
+.wrap{max-width:820px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{background:var(--band);color:var(--band-ink);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+header .wrap{display:flex;align-items:center;gap:20px;padding-block:14px;flex-wrap:wrap}
+.logo{font-family:var(--f-display);font-weight:700;font-size:22px;color:var(--accent);letter-spacing:-.02em}
+.logo small{font-family:var(--f-body);font-weight:500;font-size:13px;color:var(--band-ink);opacity:.7;margin-left:8px;letter-spacing:0}
+nav{display:flex;gap:4px;margin-left:auto}
+nav button{background:none;border:0;color:var(--band-ink);font:500 14px var(--f-body);padding:8px 12px;border-radius:6px;cursor:pointer;opacity:.75}
+nav button[aria-current="true"]{opacity:1;background:rgba(255,255,255,.1)}
+nav button:focus-visible{outline:2px solid var(--accent)}
+main{padding-block:28px 64px}
+h1,h2{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em;text-wrap:balance;margin:0}
+h1{font-size:clamp(24px,4.5vw,34px);line-height:1.15}
+h2{font-size:19px}
+.lead{color:var(--muted);max-width:62ch;margin:10px 0 0}
+.stagebar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:22px 0 26px}
+.stagebar span{flex:1}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.label{font:600 12px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 14px var(--f-body);padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip i{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.chip b{font:500 12px var(--f-mono);color:var(--muted)}
+.chip[aria-pressed="true"]{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c);background:color-mix(in srgb,var(--c) 10%,var(--surface))}
+.chip:focus-visible,.btn:focus-visible,.opt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.setup{display:grid;gap:16px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 15px var(--f-body);padding:11px 18px;border-radius:8px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface);color:var(--ink);font:500 14px var(--f-body);padding:8px 14px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.meta{font:500 13px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.toggle{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted)}
+/* quiz */
+.qtop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.prog{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:22px}
+.prog span{display:block;height:100%;background:var(--accent);transition:width .3s}
+.tag{display:inline-flex;align-items:center;gap:8px;font:600 12px var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--c)}
+.tag::before{content:"";width:22px;height:4px;border-radius:2px;background:var(--c)}
+.qcard{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:var(--r);padding:22px}
+.qtext{font-size:clamp(18px,2.6vw,21px);font-weight:600;line-height:1.4;margin:12px 0 18px;text-wrap:pretty}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:400 16px/1.45 var(--f-body);padding:12px 14px;border-radius:8px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt .k{font:500 12px var(--f-mono);color:var(--muted);border:1px solid var(--line);border-radius:4px;min-width:22px;height:22px;display:grid;place-items:center;flex:none;margin-top:1px}
+.opt:disabled{cursor:default}
+.opt.ok{border-color:var(--good);background:var(--good-bg)}
+.opt.ok .k{border-color:var(--good);color:var(--good)}
+.opt.no{border-color:var(--bad);background:var(--bad-bg)}
+.opt.no .k{border-color:var(--bad);color:var(--bad)}
+.opt.dim{opacity:.55}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
+.hint{margin-top:14px;background:var(--hint-bg);border-left:3px solid var(--hint-line);padding:12px 14px;border-radius:6px;font-size:15px}
+.fb{margin-top:16px;border-radius:8px;padding:16px;display:grid;gap:10px;font-size:15px}
+.fb.good{background:var(--good-bg)}
+.fb.bad{background:var(--bad-bg)}
+.fb h3{margin:0;font:700 16px var(--f-body)}
+.fb.good h3{color:var(--good)} .fb.bad h3{color:var(--bad)}
+.fb p{margin:0}
+.fb .lbl{font-weight:600}
+.src{font:500 12px var(--f-mono);color:var(--muted)}
+.kbd{font:500 12px var(--f-mono);color:var(--muted)}
+/* result */
+.score{font-family:var(--f-display);font-size:56px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.bars{display:grid;gap:8px;margin-top:6px}
+.bar{display:grid;grid-template-columns:minmax(120px,190px) 1fr 60px;gap:10px;align-items:center;font-size:14px}
+.bar .t{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar .t span{display:block;height:100%;background:var(--c)}
+.bar .n{font:500 12px var(--f-mono);color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.mlist{display:grid;gap:10px}
+.mi{border:1px solid var(--line);border-left:4px solid var(--c);border-radius:8px;padding:12px 14px;background:var(--surface);font-size:15px}
+.mi p{margin:4px 0 0}
+.mi .y{color:var(--bad)} .mi .r{color:var(--good)}
+/* cheat sheet */
+.sheet{display:grid;gap:14px}
+.st{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.st header{position:static;background:var(--c);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.st header b{font-family:var(--f-display);font-size:16px;font-weight:700}
+.st header span{font-size:13px;opacity:.9}
+.st .def{padding:12px 16px 0;margin:0;color:var(--muted);font-size:15px}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:14px 16px 16px}
+.cols h4{margin:0 0 6px;font:600 12px var(--f-body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.cols ul{margin:0;padding-left:18px;font-size:14px;display:grid;gap:3px}
+.cols li.dup{color:var(--muted)}
+.notes{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;font-size:14px}
+.note h4{margin:0 0 6px;font:700 15px var(--f-body)}
+.note p,.note ul{margin:0} .note ul{padding-left:18px}
+@media (max-width:640px){.cols,.notes{grid-template-columns:1fr}.bar{grid-template-columns:110px 1fr 52px}.qcard{padding:16px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header><div class="wrap">
+  <div class="logo">amec<small>тренажёр по таксономии оценки</small></div>
+  <nav>
+    <button id="nav-quiz" data-view="setup" aria-current="true">Тест</button>
+    <button id="nav-sheet" data-view="sheet">Шпаргалка</button>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <section id="v-setup">
+    <h1>Интегрированная модель оценки AMEC</h1>
+    <p class="lead">Вопросы по всем 7 блокам, таблице таксономии, PESO, сноскам и аббревиатурам. На каждый вопрос есть подсказка; при ошибке видно, чем ваш ответ отличается от правильного и где это в документе.</p>
+    <div class="stagebar" aria-hidden="true">
+      <span style="background:var(--c-obj)"></span><span style="background:var(--c-inp)"></span><span style="background:var(--c-act)"></span><span style="background:var(--c-out)"></span><span style="background:var(--c-otk)"></span><span style="background:var(--c-ocm)"></span><span style="background:var(--c-imp)"></span>
+    </div>
+    <div class="setup">
+      <div class="panel">
+        <p class="label">Разделы</p>
+        <div class="chips" id="chips"></div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn ghost" id="all-on" style="padding:6px 12px;font-size:13px">Выбрать все</button>
+          <button class="btn ghost" id="all-off" style="padding:6px 12px;font-size:13px">Снять все</button>
+        </div>
+      </div>
+      <div class="panel row" style="justify-content:space-between">
+        <div class="row">
+          <span class="label" style="margin:0">Вопросов</span>
+          <div class="seg" id="size">
+            <button data-n="20" aria-pressed="true">20</button><button data-n="50">50</button><button data-n="100">100</button><button data-n="0">Все</button>
+          </div>
+        </div>
+        <span class="meta" id="pool"></span>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="start">Начать тест</button>
+        <button class="btn" id="start-mist">Работа над ошибками</button>
+        <span class="meta" id="mist-n"></span>
+      </div>
+    </div>
+  </section>
+
+  <section id="v-quiz" hidden>
+    <div class="qtop">
+      <span class="meta" id="q-pos"></span>
+      <span class="meta" id="q-score"></span>
+      <button class="btn ghost" id="q-quit" style="padding:6px 12px;font-size:13px">Завершить</button>
+    </div>
+    <div class="prog"><span id="q-prog"></span></div>
+    <div class="qcard" id="qcard">
+      <span class="tag" id="q-tag"></span>
+      <div class="qtext" id="q-text"></div>
+      <div class="opts" id="q-opts"></div>
+      <div class="hint" id="q-hint" hidden></div>
+      <div id="q-fb"></div>
+      <div class="tools">
+        <button class="btn" id="q-hint-btn">Подсказка</button>
+        <button class="btn primary" id="q-next" hidden>Дальше</button>
+        <span class="kbd">1–4 ответ · H подсказка · Enter дальше</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="v-result" hidden>
+    <p class="label">Итог</p>
+    <div class="row" style="gap:24px;align-items:flex-end">
+      <div class="score" id="r-score"></div>
+      <div><div id="r-line" style="font-weight:600"></div><div class="meta" id="r-sub"></div></div>
+    </div>
+    <div class="panel" style="margin-top:20px">
+      <p class="label">По разделам</p>
+      <div class="bars" id="r-bars"></div>
+    </div>
+    <div class="row" style="margin:20px 0">
+      <button class="btn primary" id="r-retry">Повторить ошибки этого теста</button>
+      <button class="btn" id="r-new">Новый тест</button>
+    </div>
+    <h2 id="r-mh">Разбор ошибок</h2>
+    <div class="mlist" id="r-list" style="margin-top:12px"></div>
+  </section>
+
+  <section id="v-sheet" hidden>
+    <h1>Шпаргалка</h1>
+    <p class="lead">Таблица таксономии по этапам. Серым отмечены методы, которые встречаются сразу на нескольких этапах.</p>
+    <div class="sheet" id="sheet" style="margin-top:20px"></div>
+  </section>
+</main>
+
+<script>
+const SEC={
+  obj:{n:"Задачи (Objectives)",c:"--c-obj"},
+  inp:{n:"Исходные данные (Inputs)",c:"--c-inp"},
+  act:{n:"Мероприятия (Activities)",c:"--c-act"},
+  peso:{n:"PESO-модель",c:"--c-peso"},
+  out:{n:"Исходящая активность (Outputs)",c:"--c-out"},
+  otk:{n:"PR-реакции (Out-takes)",c:"--c-otk"},
+  ocm:{n:"PR-результаты (Outcomes)",c:"--c-ocm"},
+  imp:{n:"Конечный эффект (Impact)",c:"--c-imp"},
+  fn:{n:"Сноски и методы",c:"--c-fn"},
+  abbr:{n:"Аббревиатуры",c:"--c-abbr"},
+  struct:{n:"Структура модели",c:"--c-struct"}
+};
+const STG={
+  inp:{n:"Исходные данные (Inputs)",d:"то, что нужно подготовить до начала коммуникации: задачи, бюджет, ресурсы"},
+  act:{n:"Мероприятия (Activities)",d:"действия по планированию и практической реализации: предварительные исследования, планирование, производство"},
+  out:{n:"Исходящая активность (Outputs)",d:"продукт PR-кампании, который может быть получен и воспринят ЦА: распространение, воздействие, восприятие"},
+  otk:{n:"PR-реакции (Out-takes)",d:"оценка реакции ЦА на коммуникационные продукты: внимание, осведомлённость, понимание, интерес, вовлечённость, участие"},
+  ocm:{n:"PR-результаты (Outcomes)",d:"эффект и последствия для ЦА: усвоение, изменение отношения, доверие, предпочтение, намерение, приверженность"},
+  imp:{n:"Конечный эффект (Impact)",d:"масштаб влияния на организацию и общество: репутация, взаимоотношения, продажи, удержание, социальные изменения"}
+};
+const ORDER=["inp","act","out","otk","ocm","imp"];
+/* "*" = встречается на нескольких этапах, в автоматические вопросы не идёт */
+const TAX={
+ inp:{key:["Задачи","Бюджет","Ресурсы (штат служащих, агентства/ведомства, инфраструктура, партнёрство)"],
+  met:["SMART-задачи","Целевые показатели / ключевые показатели эффективности (KPI)"],
+  meth:["Внутренний анализ","Анализ внешней среды","Анализ осуществимости (выполнимости)","Анализ риска"]},
+ act:{key:["Предварительные исследования","Планирование","Производство (дизайн, написание, закупка средств рекламы, работа со СМИ, медиа-партнёрства)"],
+  met:["Исходные показатели / бенчмаркинг (напр., текущий уровень осведомлённости)","Потребности, предпочтения целевой аудитории","Стратегический план","План оценки","Данные предварительного тестирования (напр., творческие концепции)","Производимый контент (напр., пресс-релизы, вебсайты)","Работа со СМИ"],
+  meth:["Анализ метаданных (напр., предыдущие исследования и метрики)","Изучение рынка и аудитории (опросы, фокус-группы, интервью)","Проведение консультаций с заинтересованными сторонами","Изучение кейсов (напр., лучших практик)","SWOT-анализ (или PEST, PESTLE)","Предварительное тестирование","Экспертная оценка"]},
+ out:{key:["Распространение","Воздействие","Восприятие"],
+  met:["Объём информационной поддержки","Медиа-охват","Количество потенциальных контактов (OTS)","Упоминаемость","Тон / тональность / благосклонность","Размещённые сообщения","Посты, твиты и т.д.","Суммарное количество рейтингов ЦА (TARPs)","Объём электронного маркетинга","Стоимость 1000 «благоприятных контактов» (CPM)","Показатель кликабельности","Посещаемость мероприятий"],
+  meth:["Медиа-показатели (статистика аудитории, OTS, CPM)","Мониторинг СМИ","Анализ медиа-контента (количественный)","Анализ медиа-контента (качественный)","Анализ соцсетей (количественный и качественный)","Отчёты о проделанной работе (мероприятия, спонсорские проекты)"]},
+ otk:{key:["Внимание","Осведомлённость","Понимание","Интерес / симпатия","Вовлечённость","Участие","Изучение (рассмотрение)"],
+  met:["Уникальные посещения","Просмотры","Реакция (количество фолловеров, лайков, тегов, шеров, ретвитов)","Повторные посещения / просмотры","Воспроизведение в памяти (без подсказки, с подсказкой)","Положительные комментарии","Положительный отклик в опросах","Подписчики (RSS, информационные рассылки)","Вопросы"],
+  meth:["Веб-статистика (просмотры, загрузки)","*Анализ соцсетей (качественный)","Реакция / отклик (комментарии, письма)","*Этнографические методы (наблюдение)","*Нетнография (онлайн-этнография)","Опросы аудитории (осведомлённость, понимание, интерес, мнение)","*Фокус-группы","*Интервью"]},
+ ocm:{key:["Усвоение / знание","Изменение отношения","Удовлетворённость","Доверие","Предпочтение","Намерение","Приверженность (поддержка)"],
+  met:["Принятие сообщений","Уровень доверия","Заявления о поддержке или намерениях","Лиды","Регистрации (напр., в списках доноров органов)","Брендовые предпочтения","Опробование","Вступление","Повторное подтверждение (напр., удовлетворённость сотрудников)"],
+  meth:["*Анализ соцсетей (качественный)","Статистика баз данных (отслеживание вопросов, установление источников)","*Этнографические методы (наблюдение)","*Нетнография (онлайн-этнография)","Опросы общественного мнения","Опросы заинтересованных сторон (удовлетворённость, доверие)","*Фокус-группы","*Интервью","Индекс лояльности NPS"]},
+ imp:{key:["Репутация","Взаимоотношения","Соблюдение установленных требований","Организационные изменения","Общественные / социальные изменения"],
+  met:["Поддержка со стороны общественности","Выполнение поставленных целей (сдача крови, членство в программах скрининга)","Рост продаж","Рост пожертвований","Экономия средств","Удержание сотрудников","Удержание клиентов / лояльность клиентов","Улучшение качества жизни / рост уровня благосостояния"],
+  meth:["Записи в базе данных (донорство крови, показатели здоровья, членство)","Отслеживание продаж","Отслеживание пожертвований","Данные CRM","Результаты опросов сотрудников","Исследования репутации","Анализ эффективности затрат / отношение «затраты-выгода»","Окупаемость инвестиций, ROI (при наличии финансовых задач)","Эконометрика","Шкалы оценки качества жизни и благосостояния"]}
+};
+const LVL={key:"ключевая ступень (мезоуровень)",met:"типовой показатель (микроуровень)",meth:"метод оценки"};
+
+/* Ручные вопросы: первый вариант всегда правильный, порядок перемешивается при показе.
+   Q(раздел, вопрос, варианты, подсказка, объяснение, {индекс: почему неверно}, источник) */
+const MAN=[];
+function Q(s,q,o,h,x,w,src){MAN.push({s,q,o,h,x,w:w||{},src:src||""})}
+
+/* ---------- Задачи ---------- */
+Q("obj","В чём, по AMEC, разница между целью и задачей?",["У задачи есть определённый показатель, отражающий нужный результат; цель — просто факт наличия устремления","Цель измерима, а задача — нет","Цель ставится на год, задача — на месяц","Разницы нет, это синонимы"],"Сравните «повысить узнаваемость» и «рост узнаваемости на 20%». Что из них можно проверить?","Стр. 4: задача имеет показатель (20-процентный рост узнаваемости бренда), цель — устремление (повысить узнаваемость).",{1:"Наоборот: показатель есть именно у задачи.",2:"Сроки в определении не упоминаются. Отличие — в наличии показателя.",3:"Документ прямо выделяет это различие жирным шрифтом."},"стр. 4, блок 1");
+Q("obj","Какая формулировка — задача (objective), а не цель?",["Увеличить узнаваемость бренда на 20%","Повысить узнаваемость бренда","Улучшить отношение аудитории к компании","Стать заметнее в социальных сетях"],"Ищите формулировку с числом.","Задача содержит показатель. Остальные варианты — устремления без показателя, т.е. цели.",{1:"Нет показателя — это цель. Именно этот пример AMEC приводит как цель.",2:"Нет показателя — это цель.",3:"Нет показателя — это цель."},"стр. 4");
+Q("obj","С чего должна начинаться любая процедура оценки по AMEC?",["С определения ясных организационных задач","С выбора каналов по модели PESO","С мониторинга СМИ","С расчёта ROI"],"Блок под номером 1.","Стр. 4: «Любая процедура должна начинаться с определения ясных организационных задач».",{1:"PESO появляется позже — в Activities и Outputs.",2:"Мониторинг СМИ — метод оценки Outputs.",3:"ROI — метод оценки Impact, в самом конце."},"стр. 4, блок 1");
+Q("obj","Что следует за организационными задачами?",["Задачи по коммуникациям, в которых зеркально отражаются организационные","Утверждение бюджета","Анализ PR-реакций","Отчёт о конечном эффекте"],"Коммуникации должны отражать то, чего хочет организация.","Стр. 4: за организационными задачами следуют задачи по коммуникациям, зеркально отражающие организационные.",{},"стр. 4, блок 1");
+Q("obj","С достижением каких показателей могут быть связаны задачи (стр. 4)?",["Осведомлённость аудитории о некой идее, приверженность, принятие или потребность в ней","Только рост продаж","Только медиа-охват и OTS","Только ROI"],"Речь об отношении аудитории к идее.","Задачи могут выражаться различным образом: осведомлённость, приверженность, принятие, потребность.",{1:"Документ подчёркивает, что задачи выражаются различным образом, не только продажами.",2:"Охват и OTS — показатели Outputs, а не формулировки задач.",3:"ROI — метод оценки Impact."},"стр. 4, блок 1");
+Q("obj","Что означает буква R в SMART по документу AMEC?",["Relevant — актуальные, т.е. связанные с организационными задачами","Realistic — реалистичные","Result-oriented — ориентированные на результат","Reach — охват"],"В расшифровке в скобках есть пояснение «linked to organizational objectives».","Стр. 13: Relevant (e.g., linked to organizational objectives) — Актуальные, т.е. связанные с организационными задачами.",{1:"Распространённая трактовка, но в документе AMEC R = Relevant.",3:"Охват — показатель Outputs, к SMART не относится."},"стр. 13, аббревиатуры");
+Q("obj","Что означает буква A в SMART по документу AMEC?",["Achievable — достижимые","Actual — актуальные","Accurate — точные","Ambitious — амбициозные"],"Ловушка перевода: слово «актуальные» в документе есть, но у другой буквы.","Стр. 13: Achievable — Достижимые. «Актуальные» — это перевод R (Relevant).",{1:"«Актуальные» в документе — это R (Relevant)."},"стр. 13");
+Q("obj","Что означает буква T в SMART?",["Time-bound — ограниченные во времени","Targeted — нацеленные","Trackable — отслеживаемые","Transparent — прозрачные"],"Within a specified period.","Стр. 13: Time-bound (i.e., within a specified period) — ограниченные во времени.",{},"стр. 13");
+Q("obj","Что означают буквы S и M в SMART?",["Specific — конкретные, Measurable — измеримые","Strategic — стратегические, Meaningful — значимые","Simple — простые, Manageable — управляемые","Social — социальные, Media — медийные"],"Конкретность и возможность измерить.","Стр. 13: Конкретные (Specific), Измеримые (Measurable).",{},"стр. 13");
+Q("obj","Для чего используется аббревиатура SMART?",["Для определения целей и постановки задач","Для анализа внешней среды","Для расчёта медиа-охвата","Для сегментации по NPS"],"Мнемоника из раздела аббревиатур.","Стр. 13: SMART — мнемоническая аббревиатура для определения целей и постановки задач.",{1:"Внешнюю среду анализируют PEST/PESTLE.",3:"NPS делит на сторонников, нейтральных и критиков."},"стр. 13");
+
+/* ---------- Inputs ---------- */
+Q("inp","Какие две важные области включает блок «Исходные данные»?",["Определение целевых аудиторий и стратегический план с исходными данными (анализ ситуации, ресурсы, бюджет)","Платные и собственные медиа","Мониторинг СМИ и веб-статистика","Опросы и фокус-группы"],"Кому говорим и с каким планом и ресурсами.","Стр. 4: первая область — ЦА рекламной/PR-кампании, вторая — стратегический план и исходные данные (анализ ситуации, ресурсы, бюджет).",{1:"Медиаканалы PESO — тема Activities и Outputs.",2:"Это методы оценки Outputs/Out-takes.",3:"Это методы оценки, а не области исходных данных."},"стр. 4, блок 2");
+Q("inp","Как этап Inputs называется в некоторых логических моделях программ?",["«Исходные данные/Ресурсы»","«Подготовка/Бриф»","«Вводные/Задачи»","«Планирование»"],"Сноска 2.","Сноска 2: в некоторых логических моделях программ этот этап называется «Исходные данные/Ресурсы».",{},"стр. 12, сноска 2");
+Q("inp","Если планирование включают в исходные данные, что ещё туда нужно включить?",["Формативные исследования, предшествующие планированию","Мониторинг СМИ","Расчёт ROI","Опросы NPS"],"Сноска 7. Исследования, которые формируют план.","Сноска 7: в этом случае в исходные данные включают формативные исследования, которые предшествуют планированию.",{},"стр. 12, сноска 7");
+Q("inp","Куда в большинстве моделей оценки относят предварительные исследования и планирование?",["К ключевым мероприятиям (Activities)","К исходным данным (Inputs)","К PR-результатам (Outcomes)","Они не входят в модель"],"Сноска 7: «однако в большинстве моделей…»","Сноска 7: в большинстве моделей предварительные исследования и планирование — ключевые мероприятия программы коммуникации. Так же в таблице: они ключевые ступени Activities.",{1:"Так бывает «иногда», но в большинстве моделей — Activities."},"стр. 12, сноска 7");
+Q("inp","Что обычно понимают под исходными данными?",["Действия на предварительном этапе подготовки программы или кампании","Реакцию аудитории на сообщения","Публикации СМИ о бренде","Перемены в политике"],"Всё, что до старта.","Сноска 7: под исходными данными обычно понимают действия на предварительном этапе подготовки программы или кампании.",{1:"Это Out-takes.",2:"Это Earned media / Outputs.",3:"Это Impact."},"стр. 12, сноска 7");
+Q("inp","Как в таблице кратко определены Исходные данные?",["То, что нужно подготовить до начала процесса коммуникации","Действия в рамках планирования и практической реализации","Продукт PR-кампании","Масштаб влияния коммуникаций"],"Первая колонка таблицы.","Стр. 11: «То, что нужно подготовить до начала процесса коммуникации».",{1:"Это определение Activities.",2:"Это определение Outputs.",3:"Это определение Impact."},"стр. 11");
+
+/* ---------- Activities ---------- */
+Q("act","Что отражает раздел «Мероприятия (Activities)»?",["Проведённые мероприятия, партнёрства, тестирование/исследования, производство контента, разработку концептов","Изменение мнения о бренде","Масштаб влияния на организацию","Реакцию аудитории на сообщения"],"Всё, что делалось для реализации кампании.","Стр. 4: раздел даёт представление о мероприятиях, партнёрствах, тестировании или исследованиях, производстве контента, разработке концептов.",{1:"Это Outcomes.",2:"Это Impact.",3:"Это Out-takes."},"стр. 4, блок 3");
+Q("act","Как в таблице кратко определены Мероприятия?",["Действия, предпринимаемые в рамках планирования и практической реализации коммуникационного продукта","То, что нужно подготовить до начала коммуникации","Продукт PR-кампании, который может быть воспринят ЦА","Эффект коммуникаций на ЦА"],"Планирование + реализация.","Стр. 11, колонка Activities.",{1:"Это Inputs.",2:"Это Outputs.",3:"Это Outcomes."},"стр. 11");
+Q("act","Что входит в ключевую ступень «Производство»?",["Дизайн, написание, закупка средств рекламы, работа со СМИ, медиа-партнёрства","Опросы, интервью, фокус-группы","Охват, OTS, CPM","Репутация и взаимоотношения"],"Производство создаёт и размещает материалы.","Стр. 11: Производство (дизайн, написание, закупка средств рекламы, работа со СМИ, медиа-партнёрства и т.д.).",{1:"Это методы исследования.",2:"Это показатели Outputs.",3:"Это ключевые ступени Impact."},"стр. 11");
+Q("act","Какую модель особенно учитывает раздел Activities?",["PESO — разделение медиаканалов","SWOT","NPS","SMART"],"Четыре буквы, четыре типа медиа.","Стр. 4: раздел учитывает важность PESO-модели — разделения медиаканалов продвижения.",{1:"SWOT — метод оценки внутри Activities, но раздел выделяет именно PESO.",3:"SMART относится к постановке задач."},"стр. 4, блок 3");
+
+/* ---------- PESO ---------- */
+Q("peso","Как расшифровывается PESO?",["Paid, Earned, Shared, Owned","Paid, Earned, Social, Owned","Press, Events, Social, Online","Public, Earned, Shared, Official"],"S — не «социальные».","Стр. 4: Платные (Paid), Приобретённые (Earned), Вирусные (Shared), Собственные (Owned).",{1:"S — Shared (вирусные/обменные), а не Social."},"стр. 4");
+Q("peso","Реклама на ТВ, в печати и медийная реклама — это…",["Paid Media (платные)","Earned Media (приобретённые)","Shared Media (вирусные)","Owned Media (собственные)"],"За это компания платит.","Стр. 4: Paid — весь перечень платных инструментов, включает ТВ, печатную, медийную и другую рекламу.",{1:"Earned — публикации без прямого вмешательства компании.",2:"Shared — распространение материалов самой аудиторией.",3:"Owned — каналы, которыми бренд владеет."},"стр. 4");
+Q("peso","Публикации СМИ о бренде без прямого вмешательства компании — это…",["Earned Media (приобретённые)","Paid Media (платные)","Shared Media (вирусные)","Owned Media (собственные)"],"Компания этого не покупала и не делала.","Стр. 4: Earned — совокупность обсуждений и публикаций СМИ о бренде без прямого вмешательства компании.",{1:"Paid подразумевает оплату.",2:"Shared — репосты корпоративных материалов аудиторией.",3:"Owned — каналы компании."},"стр. 4");
+Q("peso","Публикации о бренде, сгенерированные самой аудиторией, по документу относятся к…",["Earned Media (приобретённые)","Shared Media (вирусные)","Owned Media (собственные)","Paid Media (платные)"],"Частая ловушка: аудиторию связывают с Shared. Перечитайте определение Earned.","Стр. 4: Earned «включает и публикации о бренде, сгенерированные самой аудиторией».",{1:"Shared — распространение корпоративных материалов (репосты, шеры). Собственный контент аудитории о бренде AMEC относит к Earned."},"стр. 4");
+Q("peso","Пользователи массово репостят корпоративное видео компании. Это…",["Shared Media (вирусные)","Earned Media (приобретённые)","Owned Media (собственные)","Paid Media (платные)"],"Материал корпоративный, распространяет аудитория.","Стр. 4: Shared — распространение корпоративных материалов через репосты, шеры, ретвиты, рекомендации самой аудиторией.",{1:"Earned — публикации СМИ и контент аудитории о бренде, а не репост корпоративного материала.",2:"Видео на канале компании — Owned, но его распространение аудиторией — Shared."},"стр. 4");
+Q("peso","Корпоративный блог, который компания сама создаёт и полностью контролирует, — это…",["Owned Media (собственные)","Shared Media (вирусные)","Earned Media (приобретённые)","Paid Media (платные)"],"Ключевые слова: «во владении», «полностью контролирует».","Стр. 4: Owned — канал или платформа во владении бренда; компания сама их создаёт и полностью контролирует.",{},"стр. 4");
+Q("peso","Как в документе переведено Shared Media?",["Вирусные (обменные) медиа","Приобретённые медиа","Социальные медиа","Собственные медиа"],"Слово связано с распространением «как вирус».","Стр. 4: «Вирусные (Shared Media)», дальше встречается «вирусные\\обменные медиа».",{2:"Shared ≠ Social, хотя речь о соцсетях."},"стр. 4");
+Q("peso","Как в документе переведено Earned Media?",["Приобретённые","Заработанные","Вирусные","Бесплатные"],"Не самый очевидный перевод.","Стр. 4: «Приобретённые (Earned Media)».",{1:"Так часто переводят в других источниках, но в этом документе — «приобретённые»."},"стр. 4");
+Q("peso","Какая цепочка взаимодействия каналов PESO описана в документе?",["Owned и Paid инициируют рост Shared, а Shared приводит к появлению Earned","Earned → Paid → Owned","Shared → Owned → Paid","Paid сразу порождает Owned"],"Что компания запускает сама, а что возникает в итоге само?","Стр. 4: продвижение в собственных и платных медиа может инициировать рост через вирусные/обменные, а те — привести к появлению приобретённых.",{},"стр. 4");
+Q("peso","В каких разделах документа упоминается PESO-модель?",["Мероприятия (Activities) и Исходящая активность (Outputs)","Только в Impact","В Inputs и Outcomes","В Out-takes и Impact"],"Где речь о действиях и выпущенном контенте.","Стр. 4: PESO описана в блоке 3 (Activities) и повторяется в блоке 4 (Outputs).",{},"стр. 4");
+Q("peso","Для чего, по определению, используются Paid Media?",["Для привлечения трафика на сайт, в блог, приложение и другие ресурсы компании","Для обсуждения бренда без участия компании","Для распространения материалов аудиторией","Для полного контроля над каналом"],"Платные инструменты ведут трафик куда-то.","Стр. 4: Paid — платные инструменты и платформы для привлечения трафика на сайт, в блог, приложение и другие ресурсы.",{1:"Это Earned.",2:"Это Shared.",3:"Это Owned."},"стр. 4");
+
+/* ---------- Outputs ---------- */
+Q("out","Что нужно сделать в разделе Исходящая активность (Outputs)?",["Резюмировать весь контент, материалы, активности и мероприятия с указанием целевой аудитории каждой","Оценить рост продаж","Измерить уровень доверия","Определить бюджет"],"Итог того, что выпущено, и для кого.","Стр. 4, блок 4: резюмировать весь контент, материалы, активности и мероприятия с указанием ЦА каждой активности.",{1:"Это Impact.",2:"Это Outcomes.",3:"Это Inputs."},"стр. 4, блок 4");
+Q("out","Как в таблице кратко определена Исходящая активность?",["Продукт PR-кампании, который может быть получен и воспринят представителями ЦА","Оценка реакции ЦА","Масштаб влияния коммуникаций","Действия по планированию"],"Это продукт, а не реакция на него.","Стр. 11, колонка Outputs.",{1:"Это Out-takes.",2:"Это Impact.",3:"Это Activities."},"стр. 11");
+Q("out","Какие ключевые ступени у этапа Outputs?",["Распространение, воздействие, восприятие","Внимание, осведомлённость, понимание","Задачи, бюджет, ресурсы","Репутация, взаимоотношения"],"Контент распространили, он воздействовал и был воспринят.","Стр. 11: Распространение, Воздействие, Восприятие.",{1:"Это Out-takes.",2:"Это Inputs.",3:"Это Impact."},"стр. 11");
+Q("out","Какие данные охватывает раздел Outputs?",["Основные данные по выпуску контента в рамках PESO-модели","Данные о продажах и пожертвованиях","Результаты опросов о доверии","Бюджет и штат"],"Выпуск контента по четырём типам медиа.","Стр. 4: раздел охватывает основные данные по выпуску контента в рамках PESO.",{},"стр. 4, блок 4");
+
+/* ---------- Out-takes ---------- */
+Q("otk","Что оценивается в разделе PR-реакции (Out-takes)?",["Отклик и реакция целевых аудиторий на коммуникационную деятельность","Масштаб влияния на организацию","Объём выпущенного контента","Бюджет и ресурсы"],"Реакция — ключевое слово.","Стр. 5, блок 5.",{1:"Это Impact.",2:"Это Outputs.",3:"Это Inputs."},"стр. 5, блок 5");
+Q("otk","Как в Out-takes проверяют, проявила ли аудитория интерес?",["По количеству просмотров, посетителей","По повторным заходам","По глубоким обсуждениям","По росту продаж"],"Самая базовая метрика: сколько людей пришло.","Стр. 5: интерес — количество просмотров, посетителей.",{1:"Повторные заходы — признак внимательности.",2:"Глубокие обсуждения — признак участия.",3:"Продажи — Impact."},"стр. 5, блок 5");
+Q("otk","Какой признак показывает, что аудитория была внимательна?",["Повторные заходы, просмотры","Лайки и ретвиты","Рост продаж","Объём публикаций"],"Человек вернулся снова.","Стр. 5: внимательна — повторные заходы, просмотры.",{1:"Лайки и ретвиты — интерес и симпатия.",2:"Продажи — Impact.",3:"Объём публикаций — Outputs."},"стр. 5, блок 5");
+Q("otk","Как проверить, корректно ли аудитория восприняла инфоповод?",["Комментарии, данные опросов после акции","Количество посетителей","CPM","TARPs"],"Нужно узнать, что именно люди поняли.","Стр. 5: корректность восприятия — комментарии, данные опросов после акции.",{1:"Посетители — показатель интереса.",2:"CPM — показатель Outputs.",3:"TARPs — показатель Outputs."},"стр. 5, блок 5");
+Q("otk","Через что проявляются интерес и симпатия аудитории?",["Лайки, ретвиты, репосты, шеры","Повторные заходы","Опросы общественного мнения","Записи в CRM"],"Быстрая одобряющая реакция в соцсетях.","Стр. 5: интерес и симпатия — лайки, ретвиты, репосты, шеры.",{1:"Повторные заходы — внимательность.",2:"Опросы общественного мнения — метод Outcomes.",3:"CRM — метод Impact."},"стр. 5, блок 5");
+Q("otk","В чём проявляется участие аудитории?",["Глубокие обсуждения, комментарии, визиты","Просмотры","Медиа-охват","Рост продаж"],"Больше, чем лайк.","Стр. 5: участие — глубокие обсуждения, комментарии, визиты.",{1:"Просмотры — интерес.",2:"Охват — Outputs.",3:"Продажи — Impact."},"стр. 5, блок 5");
+Q("otk","Почему в большинстве логических моделей PR-реакции не выделяют в отдельный этап?",["На продвинутой стадии они совпадают по смыслу с краткосрочными PR-последствиями","Их невозможно измерить","Они дублируют Outputs","Они относятся к Impact"],"Сноска 3.","Сноска 3: PR-реакции на продвинутой стадии совпадают с краткосрочными PR-последствиями и могут приравниваться к ним.",{1:"У них много метрик: просмотры, лайки, опросы.",2:"Их сближают с последствиями (Outcomes), а не с Outputs."},"стр. 12, сноска 3");
+Q("otk","На какие типы могут подразделяться PR-реакции и PR-последствия?",["Когнитивные, аффективные, конативные","Платные, приобретённые, вирусные","Краткие, средние, долгие","Внутренние и внешние"],"Знать, чувствовать, делать.","Сноска 3: когнитивные и/или аффективные (эмоциональные) и/или конативные (поведенческие).",{1:"Это типы медиа PESO."},"стр. 12, сноска 3");
+Q("otk","Конативные реакции — это…",["Поведенческие","Эмоциональные","Познавательные","Медийные"],"Сноска 3 даёт перевод в скобках.","Сноска 3: конативные (поведенческие).",{1:"Эмоциональные — аффективные.",2:"Познавательные — когнитивные."},"стр. 12, сноска 3");
+Q("otk","Аффективные реакции — это…",["Эмоциональные","Поведенческие","Познавательные","Финансовые"],"Affect — чувство.","Сноска 3: аффективные (эмоциональные).",{1:"Поведенческие — конативные.",2:"Познавательные — когнитивные."},"стр. 12, сноска 3");
+Q("otk","Как в таблице кратко определены PR-реакции?",["Оценка реакции представителей ЦА на коммуникационные продукты PR-кампании","Эффект и последствия для ЦА","Масштаб влияния","Продукт кампании"],"Реакция на продукт.","Стр. 11, колонка Out-takes.",{1:"Это Outcomes.",2:"Это Impact.",3:"Это Outputs."},"стр. 11");
+Q("otk","Что, кроме реакции, предлагается указать в блоке Out-takes?",["Что целевая аудитория почерпнула из коммуникаций","Сколько потрачено на рекламу","Какие партнёрства заключены","Как изменились продажи"],"Что люди «вынесли» — отсюда и название take-out/out-take.","Стр. 5: указать, что ЦА почерпнула из коммуникаций и как на них отреагировала.",{},"стр. 5, блок 5");
+
+/* ---------- Outcomes ---------- */
+Q("ocm","Что отображается в разделе PR-результаты (Outcomes)?",["Степень воздействия коммуникаций на целевую аудиторию","Реакция ЦА","Масштаб влияния на организационные задачи","Выпущенный контент"],"Влияние на ЦА, а не на организацию.","Стр. 5, блок 6.",{1:"Это Out-takes.",2:"Это Impact — там речь об организационных задачах.",3:"Это Outputs."},"стр. 5, блок 6");
+Q("ocm","Чем доказывается образовательный эффект кампании в Outcomes?",["Результатами исследований, викторин","Количеством публикаций","Ростом продаж","CPM"],"Проверка знаний.","Стр. 5: доказательства образовательного эффекта — результаты исследований, викторин.",{},"стр. 5, блок 6");
+Q("ocm","Что из перечисленного демонстрируется в разделе Outcomes?",["Появление адвокатов бренда","Рост пожертвований","Перемены в политике","Объём размещённых сообщений"],"Изменения в людях, а не в организации.","Стр. 5: изменение мнения, рост доверия, рост предпочтений, появление адвокатов бренда.",{1:"Рост пожертвований — Impact.",2:"Перемены в политике — Impact.",3:"Размещённые сообщения — Outputs."},"стр. 5, блок 6");
+Q("ocm","Почему доверие считается промежуточным результатом?",["Его пытаются завоевать для более долгосрочных целей (победа на выборах, удержание клиентов)","Его нельзя измерить","Оно возникает до кампании","Его оценивают только в Outputs"],"Сноска 1. Доверие — средство или цель?","Сноска 1: доверие пытаются завоевать для долгосрочных целей; само по себе оно не является конечной целью.",{},"стр. 12, сноска 1");
+Q("ocm","Верно ли: «Доверие само по себе является конечной целью коммуникаций»?",["Неверно","Верно"],"Сноска 1, последнее предложение.","Сноска 1: «Доверие само по себе не является конечной целью».",{1:"Документ говорит обратное."},"стр. 12, сноска 1");
+Q("ocm","С каким этапом совпадают по смыслу долгосрочные последствия?",["С конечным эффектом (Impact)","С PR-реакциями","С исходными данными","С мероприятиями"],"Сноска 4.","Сноска 4: долгосрочные последствия совпадают с конечным эффектом и иногда приравниваются к нему.",{1:"С PR-реакциями совпадают краткосрочные последствия (сноска 3)."},"стр. 12, сноска 4");
+Q("ocm","Является ли усвоение (приобретение знаний) обязательным элементом?",["Нет, но в некоторых кампаниях оно необходимо","Да, всегда","Только в коммерческих кампаниях","Оно вообще не входит в модель"],"Сноска 9.","Сноска 9: усвоение не обязательно, но в некоторых кампаниях или проектах публичной коммуникации необходимо.",{3:"Усвоение / знание — ключевая ступень Outcomes."},"стр. 12, сноска 9");
+Q("ocm","Чем усвоение отличается от понимания?",["Понимание — постижение смысла сообщений; усвоение — приобретение более глубоких и широких знаний, нужных для задач","Это синонимы","Усвоение — эмоциональная реакция","Понимание — поведенческая реакция"],"Сноска 9, последнее предложение. Понимание — в Out-takes, усвоение — в Outcomes.","Сноска 9: понимание — смысл сообщений; усвоение — более глубокие и широкие знания, необходимые для достижения задач.",{},"стр. 12, сноска 9");
+Q("ocm","Какой пример приведён в сноске об усвоении?",["Продвижение продуктов с кальцием для снижения заболеваемости остеопорозом среди женщин","Кампания по донорству крови","Предвыборная кампания","Запуск нового смартфона"],"Медицина и питание.","Сноска 9: для начала нужна разъяснительная работа о заболевании (природа, причины).",{1:"Донорство крови — пример в Impact (выполнение целей).",2:"Выборы — пример в сноске 1 про доверие."},"стр. 12, сноска 9");
+Q("ocm","Какая ещё тема в сноске 9 требует просветительской работы?",["Борьба с ожирением — подбор диеты","Курение","Безопасность на дорогах","Вакцинация"],"Тоже про питание.","Сноска 9: борьба с ожирением требует просветительской работы по подбору диеты.",{},"стр. 12, сноска 9");
+Q("ocm","Как в таблице кратко определены PR-результаты?",["Эффект, последствия или влияние коммуникационных программ и продуктов на ЦА","Оценка реакции ЦА","Масштаб влияния (полностью или частично)","Продукт PR-кампании"],"Влияние на ЦА.","Стр. 11, колонка Outcomes.",{1:"Это Out-takes.",2:"Это Impact.",3:"Это Outputs."},"стр. 11");
+
+/* ---------- Impact ---------- */
+Q("imp","Что оценивается в разделе Конечный эффект (Impact)?",["Масштаб воздействия на организационные задачи","Реакция ЦА","Изменение мнения ЦА","Выпущенный контент"],"Возврат к задачам из блока 1.","Стр. 5, блок 7: масштаб воздействия на организационные задачи; чёткая демонстрация результатов, связанных с задачами организации.",{1:"Это Out-takes.",2:"Это Outcomes.",3:"Это Outputs."},"стр. 5, блок 7");
+Q("imp","Какие показатели упоминаются в описании Impact?",["Репутация, взаимоотношения, рост продаж или пожертвований, перемены в политике, социальные сдвиги","Просмотры и лайки","OTS и CPM","SMART-задачи и бюджет"],"Результат для организации и общества.","Стр. 5, блок 7.",{1:"Out-takes.",2:"Outputs.",3:"Inputs."},"стр. 5, блок 7");
+Q("imp","Что, кроме самой организации, подлежит оценке на уровне Impact?",["Эффект на заинтересованные стороны, общественность и общество в целом","Только бюджет","Только СМИ","Только сотрудники"],"Сноска 5.","Сноска 5: impact часто оценивают только для организации, но эффект на стейкхолдеров, общественность и общество тоже подлежит оценке.",{},"стр. 12, сноска 5");
+Q("imp","Для каких организаций особенно важна оценка эффекта на общество?",["Правительственных, неправительственных и некоммерческих","Стартапов","Медиаагентств","Только крупных корпораций"],"Те, чья роль — обслуживать общественные интересы.","Сноска 5.",{},"стр. 12, сноска 5");
+Q("imp","Почему эффект на общество важен и для бизнеса?",["Он формирует среду, в которой работает бизнес; его оценка — часть анализа внешней среды, на котором строится планирование","Он напрямую увеличивает ROI","Он заменяет оценку Outputs","Он нужен только для отчётности"],"Сноска 5, конец.","Сноска 5: эффект на стейкхолдеров и общество формирует среду бизнеса; оценка — часть анализа внешней среды, аудитории и рынка, на которых строится планирование.",{},"стр. 12, сноска 5");
+Q("imp","Как в таблице кратко определён Конечный эффект?",["Масштаб влияния, оказываемого (полностью или частично) вашими коммуникационными продуктами","Эффект на ЦА","Реакция ЦА","Продукт кампании"],"Обратите внимание на «полностью или частично».","Стр. 11, колонка Impact.",{1:"Это Outcomes.",2:"Это Out-takes.",3:"Это Outputs."},"стр. 11");
+Q("imp","Когда в Impact уместен расчёт ROI?",["При наличии финансовых задач","Всегда","Только в Outputs","Никогда"],"Оговорка в скобках у метода.","Стр. 11: «Окупаемость инвестиций, ROI (при наличии финансовых задач)».",{},"стр. 11");
+
+/* ---------- Сноски и методы ---------- */
+Q("fn","Почему трудно установить причинно-следственную связь в оценке?",["На конечный результат часто влияет сразу целый ряд факторов","Нет доступа к данным","Аудитория искажает ответы","Это запрещено стандартами"],"Сноска 6.","Сноска 6: особенно трудно, когда на результат воздействует сразу целый ряд факторов (так чаще всего и происходит).",{},"стр. 12, сноска 6");
+Q("fn","Что НЕ входит в три правила причинно-следственной связи?",["Эффект должен быть выражен в деньгах","Причина предшествует эффекту","Между причиной и следствием прослеживается чёткая связь","Другие возможные причины жёстко исключаются"],"Правила: (a), (b), (c). Одного варианта среди них нет.","Сноска 6: (a) причина предшествует эффекту; (b) чёткая связь; (c) исключение других причин. Денежного выражения нет.",{1:"Это правило (a).",2:"Это правило (b).",3:"Это правило (c)."},"стр. 12, сноска 6");
+Q("fn","Что требует правило (b) причинно-следственной связи?",["Доказательств, что аудитория имела доступ к информации и пользовалась ею","Чтобы причина предшествовала эффекту","Исключения других причин","Расчёта ROI"],"Пример в скобках у второго правила.","Сноска 6 (b): чёткая связь, напр. доказательства, что аудитория имела доступ к информации и пользовалась ею.",{1:"Это правило (a).",2:"Это правило (c)."},"стр. 12, сноска 6");
+Q("fn","Что требует правило (a) причинно-следственной связи?",["Предполагаемая причина должна предшествовать эффекту","Другие причины должны исключаться","Аудитория должна иметь доступ к информации","Эффект должен быть измерен опросом"],"Порядок во времени.","Сноска 6 (a).",{1:"Это правило (c).",2:"Это пример к правилу (b)."},"стр. 12, сноска 6");
+Q("fn","Чем восприятие отличается от экспозиции?",["Восприятие — информация получена и осмыслена; экспозиция — только контакт с материалом","Это одно и то же","Экспозиция — эмоциональная реакция","Восприятие измеряется продажами"],"Сноска 8: увидеть ≠ понять.","Сноска 8: аудитория может увидеть материал, но проигнорировать его. Восприятие — информация получена и осмыслена.",{},"стр. 12, сноска 8");
+Q("fn","Человек был на торговой выставке, но из-за невнимательности не получил сообщения. Что произошло?",["Экспозиция была, восприятия не было","Восприятие было, экспозиции не было","Был достигнут конечный эффект","Произошло усвоение"],"Он «был рядом» с сообщением.","Сноска 8 приводит именно этот пример.",{1:"Без контакта восприятие невозможно."},"стр. 12, сноска 8");
+Q("fn","Где в таблице стоит ступень «Восприятие»?",["В Outputs (вместе с распространением и воздействием)","В Out-takes","В Outcomes","В Inputs"],"Сноска 8 привязана к этой клетке таблицы.","Стр. 11: Outputs — Распространение, Воздействие, Восприятие (сноска 8).",{1:"Похоже по смыслу на понимание, но в таблице «Восприятие» — ступень Outputs."},"стр. 11");
+Q("fn","Что такое этнография?",["Метод, основанный на интенсивном личном наблюдении в течение длительного периода, часто с интервью","Анализ комментариев и кликов","Опрос по шкале 0–10","Количественный анализ медиа-контента"],"Сноска 10.","Сноска 10.",{1:"Это нетнография.",2:"Это NPS."},"стр. 12, сноска 10");
+Q("fn","Что такое нетнография?",["Онлайн-этнография: наблюдение за поведением интернет-пользователей через комментарии, клики и другие цифровые метрики","Анализ газетных публикаций","Офлайн-наблюдение на мероприятии","Эконометрическое моделирование"],"Net + этнография.","Сноска 11.",{2:"Это обычная этнография."},"стр. 12, сноска 11");
+Q("fn","На какой вопрос отвечает респондент в NPS?",["Какова вероятность, что вы порекомендуете компанию/товар/бренд друзьям/знакомым/коллегам?","Насколько вы довольны покупкой?","Купите ли вы снова?","Узнаёте ли вы этот бренд?"],"Рекомендация.","Сноска 12.",{},"стр. 12–13, сноска 12");
+Q("fn","В NPS клиент поставил 8. Кто он?",["Нейтральный потребитель (доволен, но не восторжен)","Активный сторонник","Критик","Не учитывается"],"Группы: 9–10, 7–8, 0–6.","Сноска 12: 7–8 — нейтральные.",{1:"Сторонники — только 9–10.",2:"Критики — 0–6."},"стр. 13, сноска 12");
+Q("fn","В NPS клиент поставил 6. Кто он?",["Критик (detractor)","Нейтральный потребитель","Активный сторонник","Не учитывается"],"Граница групп — частая ловушка.","Сноска 12: 0–6 — критики/недовольные.",{1:"Нейтральные — 7–8. Шестёрка уже критик."},"стр. 13, сноска 12");
+Q("fn","Кто в NPS ставит 9–10?",["Активные сторонники / пропагандисты / энтузиасты","Нейтральные","Критики","Лиды"],"Самые высокие оценки.","Сноска 12.",{},"стр. 13, сноска 12");
+Q("fn","Что такое эконометрика?",["Применение математических и статистических методов для проверки гипотез и определения экономических взаимосвязей на эмпирических данных","Подсчёт медиа-охвата","Анализ комментариев","Расчёт стоимости 1000 контактов"],"Сноска 13.","Сноска 13. В таблице — метод оценки Impact.",{},"стр. 13, сноска 13");
+
+/* ---------- Аббревиатуры ---------- */
+Q("abbr","Как расшифровывается CPM?",["Cost per thousand (mille — лат. «тысяча»)","Cost per minute","Clicks per mille","Customer performance metric"],"M — латынь.","Стр. 13: Cost per thousand; mille в переводе с латинского — «тысяча».",{},"стр. 13");
+Q("abbr","Как в документе переведено CPM?",["Стоимость 1000 «благоприятных контактов»","Стоимость клика","Стоимость лида","Стоимость минуты эфира"],"Тысяча контактов.","Стр. 13.",{},"стр. 13");
+Q("abbr","Что такое OTS?",["Opportunities to see — возможность увидеть сообщение; часто считается как impressions","Online traffic share","Overall target score","Offline touch score"],"«Возможность увидеть».","Стр. 13: часто исчисляется также как «количество потенциальных контактов».",{},"стр. 13");
+Q("abbr","Что такое TARPs?",["Target audience ratings points — суммарное количество рейтингов ЦА","Total advertising reach percentage","Target audience response points","Total average reach points"],"Рейтинги целевой аудитории.","Стр. 13: суммарное количество рейтингов ЦА на основе рейтинговой системы в рекламе.",{},"стр. 13");
+Q("abbr","Что такое UWEX?",["University of Wisconsin Extension (Taylor-Power & Henert, 2008)","Universal Web Exchange","United Way Evaluation","Unified Weighted Exposure"],"Университет.","Стр. 13: программа «Extension» Университета штата Висконсин.",{},"стр. 13");
+Q("abbr","Чем PESTEL отличается от PESTLE?",["Экологические (E) аспекты стоят перед правовыми (L); состав тот же","В PESTEL нет правовых факторов","PESTEL добавляет этические факторы","PESTEL используется только госорганами"],"Порядок букв.","Стр. 13: в PESTEL экологические аспекты предшествуют правовым.",{},"стр. 13");
+Q("abbr","Какие факторы анализирует PEST?",["Политические, экономические, социальные, технологические","Платные, приобретённые, вирусные, собственные","Сильные, слабые стороны, возможности, угрозы","Правовые и экологические"],"P-E-S-T.","Стр. 13.",{1:"Это PESO.",2:"Это SWOT.",3:"Их добавляет PESTLE."},"стр. 13");
+Q("abbr","Какие категории SWOT относятся к внешней среде?",["Opportunities и Threats","Strengths и Weaknesses","Strengths и Threats","Weaknesses и Opportunities"],"Возможности и угрозы приходят извне.","SWOT выявляет факторы внутренней (S, W) и внешней (O, T) среды.",{1:"Сильные и слабые стороны — внутренние."},"стр. 13");
+Q("abbr","Что такое SWOT по документу?",["Метод стратегического планирования: факторы внутренней и внешней среды в четырёх категориях","Метод расчёта медиа-охвата","Шкала лояльности","Мнемоника постановки задач"],"S, W, O, T.","Стр. 13.",{2:"Это NPS.",3:"Это SMART."},"стр. 13");
+Q("abbr","Что такое KPI?",["Key Performance Indicator — ключевой показатель эффективности","Key Public Impact","Knowledge per impression","Key partner index"],"В таблице — показатель Inputs.","Стр. 13.",{},"стр. 13");
+Q("abbr","Что такое CRM?",["Customer relationship management — система управления взаимоотношениями с клиентами","Cost reach model","Content reach metric","Corporate reputation monitoring"],"Данные CRM — метод оценки Impact.","Стр. 13.",{},"стр. 13");
+Q("abbr","ROI — это…",["Return on investment — окупаемость инвестиций","Rate of impressions","Reach of influence","Reputation index"],"Возврат вложений.","Стр. 13.",{},"стр. 13");
+
+/* ---------- Структура ---------- */
+Q("struct","Сколько этапов (макроуровень) в таблице таксономии?",["6: Inputs, Activities, Outputs, Out-takes, Outcomes, Impact","7","5","4"],"Посчитайте цветные колонки таблицы на стр. 11, без колонки «Этапы».","Стр. 11: 6 этапов. В пошаговом описании (стр. 4–5) — 7 блоков, потому что первым идут «Задачи».",{1:"7 — число блоков в описании на стр. 4–5. В таблице «Задачи» входят в Inputs как ключевая ступень."},"стр. 11");
+Q("struct","Какой блок из описания на стр. 4–5 в таблице не выделен отдельным этапом?",["Задачи (Objectives) — они стоят ключевой ступенью в Inputs","Мероприятия","PR-реакции","Конечный эффект"],"Сравните первые колонки таблицы и блок 1.","Стр. 11: «Задачи» — первая ключевая ступень Inputs.",{},"стр. 4 и 11");
+Q("struct","Правильный порядок этапов таксономии:",["Inputs → Activities → Outputs → Out-takes → Outcomes → Impact","Inputs → Outputs → Activities → Outcomes → Out-takes → Impact","Activities → Inputs → Outputs → Out-takes → Impact → Outcomes","Inputs → Activities → Out-takes → Outputs → Outcomes → Impact"],"Подготовка → действия → продукт → реакция → результат → эффект.","Стр. 11.",{},"стр. 11");
+Q("struct","Какой этап идёт сразу после PR-реакций (Out-takes)?",["PR-результаты (Outcomes)","Конечный эффект (Impact)","Исходящая активность (Outputs)","Мероприятия (Activities)"],"Сначала реакция, потом изменение.","Стр. 11.",{},"стр. 11");
+Q("struct","Какой этап предшествует PR-реакциям (Out-takes)?",["Исходящая активность (Outputs)","Мероприятия (Activities)","PR-результаты (Outcomes)","Исходные данные (Inputs)"],"Сначала нужно что-то выпустить.","Стр. 11.",{},"стр. 11");
+Q("struct","Что соответствует мезоуровню таблицы?",["Ключевые ступени","Этапы","Типовые показатели и контрольные точки","Методы оценки"],"Средний уровень.","Стр. 11: Этапы — макроуровень, Ключевые ступени — мезоуровень, Типовые показатели — микроуровень.",{1:"Этапы — макроуровень.",2:"Это микроуровень."},"стр. 11");
+Q("struct","Что соответствует микроуровню таблицы?",["Типовые показатели и контрольные точки","Ключевые ступени","Этапы","Краткое определение"],"Самый детальный уровень.","Стр. 11.",{1:"Мезоуровень.",2:"Макроуровень."},"стр. 11");
+Q("struct","Что соответствует макроуровню таблицы?",["Этапы","Ключевые ступени","Типовые показатели","Методы оценки"],"Самый общий уровень.","Стр. 11.",{},"стр. 11");
+Q("struct","Какие строки есть в таблице таксономии?",["Краткое определение, ключевые ступени, типовые показатели и контрольные точки, методы оценки","Цель, задача, бюджет, отчёт","Paid, Earned, Shared, Owned","S, W, O, T"],"Четыре строки под заголовками этапов.","Стр. 11.",{},"стр. 11");
+Q("struct","Что даёт кнопка SUBMIT в конце процедуры?",["Возможность конвертировать результаты в PDF для распространения или использования как бриф/стратегический план","Отправку отчёта в AMEC","Удаление данных","Запуск мониторинга СМИ"],"«Подтвердить».","Стр. 5.",{},"стр. 5");
+Q("struct","Как вернуться и отредактировать часть работы (EDIT)?",["Нажать верхнюю красную кнопку","Нажать SUBMIT","Перезагрузить страницу","Нажать «Ресурсы» в меню"],"Цвет кнопки.","Стр. 5: нажмите верхнюю красную кнопку, внесите изменения, снова SUBMIT и сохраните PDF.",{1:"SUBMIT сохраняет, а не редактирует."},"стр. 5");
+Q("struct","Для чего можно использовать итоговый PDF?",["На встречах и презентациях, как исчерпывающий бриф или стратегический план","Только для налоговой отчётности","Как рекламный макет","Его нельзя распространять"],"Стр. 5, последний абзац.","Стр. 5.",{},"стр. 5");
+
+/* ---------- Автогенерация из таблицы ---------- */
+function stripDup(t){return t.replace(/^\*/,"")}
+const AUTO=[];
+ORDER.forEach(sk=>{["key","met","meth"].forEach(lv=>{
+  TAX[sk][lv].forEach((item,i)=>{
+    if(item.startsWith("*"))return;
+    const others=ORDER.filter(x=>x!==sk);
+    AUTO.push({id:`a-${sk}-${lv}-${i}`,s:sk,gen:"cls",item,lv,stage:sk,others,
+      q:`К какому этапу таксономии относится ${LVL[lv]} «${item}»?`,
+      h:`Это ${LVL[lv]}. Пройдите по цепочке: подготовка → действия → выпущенный продукт → реакция ЦА → изменение ЦА → эффект для организации. Где здесь «${item}»?`,
+      x:`«${item}» — ${LVL[lv]} этапа «${STG[sk].n}»: ${STG[sk].d}.`+(sk==="inp"&&item==="Задачи"?" В пошаговом описании задачи вынесены отдельным блоком 1, но в таблице это ключевая ступень Inputs.":""),
+      src:"стр. 11, таблица"});
+  });
+})});
+ORDER.forEach(sk=>{TAX[sk].key.forEach((item,i)=>{
+  AUTO.push({id:`r-${sk}-${i}`,s:sk,gen:"rev",item,stage:sk,
+    q:`Что является ключевой ступенью этапа «${STG[sk].n}»?`,
+    h:`Вспомните определение этапа: ${STG[sk].d.split(":")[0]}.`,
+    x:`Ключевые ступени этапа «${STG[sk].n}»: ${TAX[sk].key.join(", ")}.`,src:"стр. 11, мезоуровень"});
+})});
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function pick(a,n){return shuffle(a).slice(0,n)}
+
+/* превращает вопрос в показанный экземпляр: варианты [{t,ok,why}] */
+function materialize(Qo){
+  if(!Qo.gen){
+    const o=Qo.o.map((t,i)=>({t,ok:i===0,why:Qo.w[i]||null}));
+    return {...Qo,opts:Qo.o.length>2?shuffle(o):o};
+  }
+  if(Qo.gen==="cls"){
+    const ds=pick(Qo.others,3);
+    const o=[{t:STG[Qo.stage].n,ok:true}].concat(ds.map(d=>({t:STG[d].n,ok:false,why:`«${STG[d].n}» — это ${STG[d].d}. «${Qo.item}» сюда не относится.`})));
+    return {...Qo,opts:shuffle(o)};
+  }
+  const pool=[];ORDER.filter(x=>x!==Qo.stage).forEach(d=>TAX[d].key.forEach(t=>pool.push({t,d})));
+  const ds=pick(pool,3);
+  const o=[{t:Qo.item,ok:true}].concat(ds.map(p=>({t:p.t,ok:false,why:`«${p.t}» — ключевая ступень этапа «${STG[p.d].n}», а не «${STG[Qo.stage].n}».`})));
+  return {...Qo,opts:shuffle(o)};
+}
+
+const ALL=MAN.map((q,i)=>({...q,id:"m"+i})).concat(AUTO);
+const BYID=Object.fromEntries(ALL.map(q=>[q.id,q]));
+
+/* ---------- хранение ошибок ---------- */
+let MIST=new Set();
+try{MIST=new Set(JSON.parse(localStorage.getItem("amec-mist")||"[]"))}catch(e){}
+function saveMist(){try{localStorage.setItem("amec-mist",JSON.stringify([...MIST]))}catch(e){}}
+
+/* ---------- настройка ---------- */
+const $=id=>document.getElementById(id);
+const sel=new Set(Object.keys(SEC));
+let size=20;
+function counts(){const c={};ALL.forEach(q=>c[q.s]=(c[q.s]||0)+1);return c}
+function renderChips(){
+  const c=counts();
+  $("chips").innerHTML=Object.entries(SEC).map(([k,v])=>`<button class="chip" id="chip-${k}" data-k="${k}" style="--c:var(${v.c})" aria-pressed="${sel.has(k)}"><i></i>${v.n}<b>${c[k]||0}</b></button>`).join("");
+  const n=ALL.filter(q=>sel.has(q.s)).length;
+  $("pool").textContent=`в выбранных разделах: ${n} из ${ALL.length}`;
+  $("start").disabled=n===0;
+  const m=[...MIST].filter(id=>BYID[id]).length;
+  $("mist-n").textContent=m?`накоплено ошибок: ${m}`:"ошибок пока нет";
+  $("start-mist").disabled=m===0;
+}
+$("chips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;const k=b.dataset.k;sel.has(k)?sel.delete(k):sel.add(k);renderChips()});
+$("all-on").onclick=()=>{Object.keys(SEC).forEach(k=>sel.add(k));renderChips()};
+$("all-off").onclick=()=>{sel.clear();renderChips()};
+$("size").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;size=+b.dataset.n;[...$("size").children].forEach(x=>x.setAttribute("aria-pressed",x===b))});
+
+/* ---------- тест ---------- */
+let S=null;
+function show(v){["setup","quiz","result","sheet"].forEach(x=>$("v-"+x).hidden=x!==v);$("nav-quiz").setAttribute("aria-current",v!=="sheet");$("nav-sheet").setAttribute("aria-current",v==="sheet");window.scrollTo(0,0)}
+function start(ids){
+  let list=shuffle(ids);
+  S={list:list.map(id=>materialize(BYID[id])),i:0,right:0,hints:0,log:[]};
+  show("quiz");renderQ();
+}
+$("start").onclick=()=>{const ids=ALL.filter(q=>sel.has(q.s)).map(q=>q.id);start(size?shuffle(ids).slice(0,size):ids)};
+$("start-mist").onclick=()=>start([...MIST].filter(id=>BYID[id]));
+
+function renderQ(){
+  const q=S.list[S.i];S.answered=false;S.hinted=false;
+  const c=SEC[q.s].c;
+  $("qcard").style.setProperty("--c",`var(${c})`);
+  $("q-tag").textContent=SEC[q.s].n;
+  $("q-pos").textContent=`Вопрос ${S.i+1} / ${S.list.length}`;
+  $("q-score").textContent=`верно ${S.right}`;
+  $("q-prog").style.width=(S.i/S.list.length*100)+"%";
+  $("q-text").textContent=q.q;
+  $("q-opts").innerHTML=q.opts.map((o,i)=>`<button class="opt" id="opt-${i}" data-i="${i}"><span class="k">${i+1}</span><span>${esc(o.t)}</span></button>`).join("");
+  $("q-hint").hidden=true;$("q-hint").textContent="";
+  $("q-fb").innerHTML="";$("q-next").hidden=true;$("q-hint-btn").hidden=false;$("q-hint-btn").disabled=false;
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+$("q-opts").addEventListener("click",e=>{const b=e.target.closest(".opt");if(b)answer(+b.dataset.i)});
+$("q-hint-btn").onclick=hint;
+function hint(){if(S.answered||S.hinted)return;S.hinted=true;S.hints++;const q=S.list[S.i];$("q-hint").innerHTML=`<b>Подсказка.</b> ${esc(q.h)}`;$("q-hint").hidden=false;$("q-hint-btn").disabled=true}
+function answer(i){
+  if(S.answered)return;S.answered=true;
+  const q=S.list[S.i],o=q.opts[i],ok=o.ok,right=q.opts.find(x=>x.ok);
+  if(ok){S.right++;MIST.delete(q.id)}else MIST.add(q.id);saveMist();
+  S.log.push({q,ok,chosen:o,right,hinted:S.hinted});
+  [...$("q-opts").children].forEach((b,j)=>{b.disabled=true;const oj=q.opts[j];if(oj.ok)b.classList.add("ok");else if(j===i)b.classList.add("no");else b.classList.add("dim")});
+  $("q-fb").innerHTML=ok
+    ?`<div class="fb good"><h3>Верно${S.hinted?" (с подсказкой)":""}</h3><p>${esc(q.x)}</p><span class="src">Источник: ${esc(q.src)}</span></div>`
+    :`<div class="fb bad"><h3>Ошибка</h3>
+       <p><span class="lbl">Ваш ответ:</span> ${esc(o.t)}</p>
+       <p><span class="lbl">Почему неверно:</span> ${esc(o.why||"Это не совпадает с формулировкой документа. Сравните с правильным ответом ниже.")}</p>
+       <p><span class="lbl">Правильно:</span> ${esc(right.t)}</p>
+       <p><span class="lbl">Объяснение:</span> ${esc(q.x)}</p>
+       <span class="src">Источник: ${esc(q.src)}</span></div>`;
+  $("q-score").textContent=`верно ${S.right}`;
+  $("q-hint-btn").hidden=true;$("q-next").hidden=false;
+  $("q-next").textContent=S.i+1<S.list.length?"Дальше":"Результаты";$("q-next").focus();
+}
+$("q-next").onclick=next;
+function next(){S.i++;S.i<S.list.length?renderQ():finish()}
+$("q-quit").onclick=()=>{S.list=S.list.slice(0,S.log.length);S.log.length?finish():(show("setup"),renderChips())};
+
+function finish(){
+  show("result");
+  const n=S.log.length,r=S.log.filter(l=>l.ok).length;
+  $("r-score").textContent=Math.round(r/n*100)+"%";
+  $("r-line").textContent=`${r} из ${n} верно`;
+  $("r-sub").textContent=`подсказок использовано: ${S.hints}`;
+  const by={};S.log.forEach(l=>{const b=by[l.q.s]||(by[l.q.s]={n:0,r:0});b.n++;if(l.ok)b.r++});
+  $("r-bars").innerHTML=Object.keys(SEC).filter(k=>by[k]).map(k=>`<div class="bar" style="--c:var(${SEC[k].c})"><span>${SEC[k].n}</span><div class="t"><span style="width:${by[k].r/by[k].n*100}%"></span></div><span class="n">${by[k].r}/${by[k].n}</span></div>`).join("");
+  const bad=S.log.filter(l=>!l.ok);
+  $("r-mh").hidden=!bad.length;$("r-retry").hidden=!bad.length;
+  $("r-list").innerHTML=bad.map(l=>`<div class="mi" style="--c:var(${SEC[l.q.s].c})"><b>${esc(l.q.q)}</b>
+    <p class="y">✗ ${esc(l.chosen.t)}</p><p>${esc(l.chosen.why||"")}</p><p class="r">✓ ${esc(l.right.t)}</p><p class="src">${esc(l.q.x)} · ${esc(l.q.src)}</p></div>`).join("");
+  S.badIds=bad.map(l=>l.q.id);
+}
+$("r-retry").onclick=()=>start(S.badIds);
+$("r-new").onclick=()=>{show("setup");renderChips()};
+
+document.addEventListener("keydown",e=>{
+  if($("v-quiz").hidden||e.metaKey||e.ctrlKey||e.altKey)return;
+  const n=parseInt(e.key,10);
+  if(n>=1&&n<=S.list[S.i].opts.length&&!S.answered){answer(n-1);e.preventDefault()}
+  else if((e.key==="h"||e.key==="р"||e.key==="H"||e.key==="Р")&&!S.answered)hint();
+  else if((e.key==="Enter"||e.key==="ArrowRight")&&S.answered){e.preventDefault();next()}
+});
+
+/* ---------- шпаргалка ---------- */
+function renderSheet(){
+  const map={inp:"--c-inp",act:"--c-act",out:"--c-out",otk:"--c-otk",ocm:"--c-ocm",imp:"--c-imp"};
+  const li=a=>a.map(t=>`<li${t.startsWith("*")?' class="dup"':""}>${esc(stripDup(t))}</li>`).join("");
+  let h=ORDER.map(k=>`<div class="st" style="--c:var(${map[k]})"><header><b>${STG[k].n}</b><span>${["1–2","3","4","5","6","7"][ORDER.indexOf(k)]==="1–2"?"блоки 1–2":"блок "+(ORDER.indexOf(k)+2)}</span></header>
+    <p class="def">${STG[k].d[0].toUpperCase()+STG[k].d.slice(1)}.</p>
+    <div class="cols"><div><h4>Ключевые ступени</h4><ul>${li(TAX[k].key)}</ul></div><div><h4>Типовые показатели</h4><ul>${li(TAX[k].met)}</ul></div><div><h4>Методы оценки</h4><ul>${li(TAX[k].meth)}</ul></div></div></div>`).join("");
+  h+=`<div class="notes">
+   <div class="note"><h4>Цель и задача</h4><p>Задача имеет показатель («рост узнаваемости на 20%»), цель — нет («повысить узнаваемость»).</p></div>
+   <div class="note"><h4>PESO</h4><ul><li>Paid — платные: ТВ, печать, медийная реклама</li><li>Earned — приобретённые: СМИ и контент аудитории о бренде</li><li>Shared — вирусные: репосты корпоративных материалов</li><li>Owned — собственные: под полным контролем бренда</li></ul></div>
+   <div class="note"><h4>Причинность (сноска 6)</h4><ul><li>(a) причина раньше эффекта</li><li>(b) чёткая связь: аудитория имела доступ к информации</li><li>(c) другие причины исключены</li></ul></div>
+   <div class="note"><h4>NPS (сноска 12)</h4><ul><li>9–10 — сторонники</li><li>7–8 — нейтральные</li><li>0–6 — критики</li></ul></div>
+   <div class="note"><h4>Реакции (сноска 3)</h4><p>Когнитивные (знание), аффективные (эмоции), конативные (поведение). Краткосрочные последствия ≈ Out-takes, долгосрочные ≈ Impact.</p></div>
+   <div class="note"><h4>Тонкие места</h4><ul><li>Доверие — промежуточный результат (сн. 1)</li><li>Восприятие ≠ экспозиция (сн. 8)</li><li>Усвоение глубже понимания, не обязательно (сн. 9)</li><li>ROI — только при финансовых задачах</li></ul></div>
+  </div>`;
+  $("sheet").innerHTML=h;
+}
+document.querySelector("nav").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.view==="sheet"){show("sheet")}else{show("setup");renderChips()}});
+
+renderChips();renderSheet();
+</script>
+
+</body></html>
